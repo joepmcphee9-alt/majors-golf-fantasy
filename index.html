@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Majors Golf Fantasy</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; }
+  .app { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem; }
+  .header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #e0e0d8; }
+  .header h1 { font-size: 22px; font-weight: 600; color: #1a1a1a; }
+  .header p { font-size: 13px; color: #888; margin-top: 3px; }
+  .live-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 4px 10px; background: #eafaf1; color: #1a7a4a; border-radius: 20px; font-weight: 500; }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #1a7a4a; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+  .stat-card { background: white; border-radius: 10px; padding: 1rem; border: 1px solid #e8e8e0; }
+  .stat-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .stat-value { font-size: 20px; font-weight: 600; }
+  .tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 2px solid #e0e0d8; }
+  .tab { padding: 10px 20px; font-size: 14px; cursor: pointer; border: none; background: none; color: #888; border-bottom: 2px solid transparent; margin-bottom: -2px; font-weight: 500; }
+  .tab.active { color: #1a7a4a; border-bottom-color: #1a7a4a; }
+  .tab:hover:not(.active) { color: #1a1a1a; }
+  .card { background: white; border-radius: 12px; border: 1px solid #e8e8e0; overflow: hidden; margin-bottom: 1rem; }
+  .card-header { padding: 12px 16px; border-bottom: 1px solid #e8e8e0; font-size: 13px; font-weight: 600; color: #555; display: flex; justify-content: space-between; background: #fafaf8; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { padding: 8px 14px; text-align: left; font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.04em; background: #fafaf8; }
+  th.r, td.r { text-align: right; }
+  td { padding: 10px 14px; border-top: 1px solid #f0f0e8; }
+  tr:hover td { background: #fafaf8; }
+  .gold td { background: #fffbee; }
+  .gold:hover td { background: #fff5d0; }
+  .silver td { background: #f8f8f8; }
+  .bronze td { background: #f5faf0; }
+  .pos-badge { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; font-size: 12px; font-weight: 700; }
+  .p1 { background: #f5c842; color: #7a5500; }
+  .p2 { background: #e0e0e0; color: #555; }
+  .p3 { background: #b8d98a; color: #2d5a0a; }
+  .pn { background: #f0f0f0; color: #888; font-size: 11px; }
+  .pts { font-weight: 600; }
+  .green { color: #1a7a4a; font-weight: 500; }
+  .red { color: #c0392b; font-weight: 500; }
+  .cut-badge { font-size: 10px; padding: 2px 7px; background: #fdf0f0; color: #c0392b; border-radius: 10px; font-weight: 600; }
+  .active-badge { font-size: 10px; padding: 2px 7px; background: #eafaf1; color: #1a7a4a; border-radius: 10px; font-weight: 600; }
+  .team-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .team-card { background: white; border: 1px solid #e8e8e0; border-radius: 12px; overflow: hidden; }
+  .team-header { padding: 10px 14px; background: #fafaf8; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e8e8e0; }
+  .team-name { font-size: 13px; font-weight: 600; }
+  .team-rank { font-size: 11px; color: #888; }
+  .team-pts { font-size: 15px; font-weight: 700; color: #1a7a4a; }
+  .player-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 14px; border-top: 1px solid #f0f0e8; font-size: 12px; }
+  .player-pts { font-weight: 600; }
+  .updated { font-size: 11px; color: #aaa; text-align: center; margin-top: 1.5rem; }
+  .loading { text-align: center; padding: 3rem; color: #888; font-size: 15px; }
+  .error { text-align: center; padding: 3rem; color: #c0392b; font-size: 14px; }
+  @media(max-width:600px) {
+    .stats-grid { grid-template-columns: repeat(2,1fr); }
+    .team-grid { grid-template-columns: 1fr; }
+    th.hide, td.hide { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const API_URL = "https://script.google.com/macros/s/AKfycbwQVNiw25Ex_LVjotgZjbnjHQfBCxcx8iTg3AQEOSSIiXEFgHwWel2s5BDuHR_5QN58/exec";
+
+function App() {
+  const [data, setData] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+  const [tab, setTab] = React.useState('leaderboard');
+
+  React.useEffect(() => {
+    fetch(API_URL)
+      .then(r => r.json())
+      .then(d => { setData(d); setLoading(false); })
+      .catch(e => { setError("Could not load data. Please try again later."); setLoading(false); });
+  }, []);
+
+  if (loading) return <div className="app"><div className="loading">Loading tournament data...</div></div>;
+  if (error) return <div className="app"><div className="error">{error}</div></div>;
+
+  const { tournament, venue, lastUpdated, leaderboard, players, teams } = data;
+  const activePlayers = players.filter(p => !String(p.status).includes('CUT') && !String(p.status).includes('cut'));
+  const cutPlayers = players.filter(p => String(p.status).includes('CUT') || String(p.status).includes('cut'));
+  const leader = leaderboard[0] || {};
+
+  function posBadge(i) {
+    const n = i + 1;
+    if (n===1) return <span className="pos-badge p1">1</span>;
+    if (n===2) return <span className="pos-badge p2">2</span>;
+    if (n===3) return <span className="pos-badge p3">3</span>;
+    return <span className="pos-badge pn">{n}</span>;
+  }
+
+  function rowClass(i) {
+    if (i===0) return 'gold';
+    if (i===1) return 'silver';
+    if (i===2) return 'bronze';
+    return '';
+  }
+
+  function toParClass(val) {
+    const s = String(val);
+    if (s.indexOf('-') === 0) return 'green';
+    if (s === 'E' || s === '0') return '';
+    return 'red';
+  }
+
+  function ordinal(n) {
+    const s = ['th','st','nd','rd'];
+    const v = n % 100;
+    return n + (s[(v-20)%10] || s[v] || s[0]);
+  }
+
+  // Build player points map for teams tab
+  const playerPtsMap = {};
+  players.forEach(p => { playerPtsMap[p.name] = p; });
+
+  return (
+    <div className="app">
+      <div className="header">
+        <div>
+          <h1>{tournament}</h1>
+          <p>{venue}</p>
+        </div>
+        <span className="live-badge"><span className="live-dot"></span>Live</span>
+      </div>
+
+      <div className="stats-grid">
+        <div className="stat-card"><div className="stat-label">Managers</div><div className="stat-value">{leaderboard.length}</div></div>
+        <div className="stat-card"><div className="stat-label">Leader</div><div className="stat-value" style={{fontSize:'15px',paddingTop:'3px'}}>{leader.manager || '—'}</div></div>
+        <div className="stat-card"><div className="stat-label">Top score</div><div className="stat-value">{leader.totalPts || '—'}</div></div>
+        <div className="stat-card"><div className="stat-label">Players active</div><div className="stat-value">{activePlayers.length}</div></div>
+      </div>
+
+      <div className="tabs">
+        {['leaderboard','scores','teams'].map(t => (
+          <button key={t} className={'tab'+(tab===t?' active':'')} onClick={() => setTab(t)}>
+            {t.charAt(0).toUpperCase()+t.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'leaderboard' && (
+        <div className="card">
+          <div className="card-header"><span>Fantasy standings</span><span>{leaderboard.length} managers</span></div>
+          <table>
+            <thead><tr>
+              <th style={{width:40}}>Pos</th>
+              <th>Manager</th>
+              <th className="r hide">Pick 1</th>
+              <th className="r hide">Pick 2</th>
+              <th className="r hide">Pick 3</th>
+              <th className="r hide">Pick 4</th>
+              <th className="r hide">Pick 5</th>
+              <th className="r hide">Pick 6</th>
+              <th className="r">Total pts</th>
+            </tr></thead>
+            <tbody>
+              {leaderboard.map((m,i) => (
+                <tr key={i} className={rowClass(i)}>
+                  <td>{posBadge(i)}</td>
+                  <td style={{fontWeight:600}}>{m.manager}</td>
+                  <td className="r hide">{m.pick1pts}</td>
+                  <td className="r hide">{m.pick2pts}</td>
+                  <td className="r hide">{m.pick3pts}</td>
+                  <td className="r hide">{m.pick4pts}</td>
+                  <td className="r hide">{m.pick5pts}</td>
+                  <td className="r hide">{m.pick6pts}</td>
+                  <td className="r pts">{m.totalPts}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {tab === 'scores' && (
+        <div className="card">
+          <div className="card-header"><span>Picked players — live scores</span><span>{players.length} players</span></div>
+          <table>
+            <thead><tr>
+              <th style={{width:40}}>Pos</th>
+              <th>Player</th>
+              <th className="r">R1</th>
+              <th className="r">R2</th>
+              <th className="r hide">R3</th>
+              <th className="r hide">R4</th>
+              <th className="r">To par</th>
+              <th className="r">Hole pts</th>
+              <th className="r hide">Bonus</th>
+              <th className="r hide">Finish</th>
+              <th className="r">Total</th>
+              <th className="hide">Status</th>
+            </tr></thead>
+            <tbody>
+              {players.map((p,i) => {
+                const cut = String(p.status).toLowerCase().includes('cut');
+                return (
+                  <tr key={i}>
+                    <td>{cut ? <span className="cut-badge">CUT</span> : p.position}</td>
+                    <td style={{fontWeight:500}}>{p.name}</td>
+                    <td className="r">{p.r1||'—'}</td>
+                    <td className="r">{p.r2||'—'}</td>
+                    <td className="r hide">{p.r3||'—'}</td>
+                    <td className="r hide">{p.r4||'—'}</td>
+                    <td className={'r '+toParClass(p.toPar)}>{p.toPar||'—'}</td>
+                    <td className="r">{p.holePts}</td>
+                    <td className="r hide">{p.bonusPts}</td>
+                    <td className="r hide">{p.finishPts}</td>
+                    <td className="r pts">{p.totalPts}</td>
+                    <td className="hide">{cut ? <span className="cut-badge">Cut</span> : <span className="active-badge">Active</span>}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {tab === 'teams' && (
+        <div className="team-grid">
+          {teams.map((team, i) => {
+            const lbEntry = leaderboard.find(l => l.manager === team.manager) || {};
+            const rank = leaderboard.findIndex(l => l.manager === team.manager) + 1;
+            return (
+              <div key={i} className="team-card">
+                <div className="team-header">
+                  <div>
+                    <div className="team-name">{team.manager}</div>
+                    <div className="team-rank">{rank ? ordinal(rank)+' place' : ''}</div>
+                  </div>
+                  <div className="team-pts">{lbEntry.totalPts || 0} pts</div>
+                </div>
+                {team.picks.map((pick, j) => {
+                  const p = playerPtsMap[pick.name] || {};
+                  const cut = String(p.status||'').toLowerCase().includes('cut');
+                  return (
+                    <div key={j} className="player-row">
+                      <div style={{opacity: cut ? 0.5 : 1}}>{pick.name}</div>
+                      <div style={{display:'flex',alignItems:'center',gap:8}}>
+                        {cut && <span className="cut-badge">Cut</span>}
+                        <span className="player-pts">{p.totalPts || 0} pts</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="updated">Last updated: {lastUpdated} · Data via Slash Golf API</div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
