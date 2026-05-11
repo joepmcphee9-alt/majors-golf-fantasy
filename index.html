@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Majors Golf Fantasy</title>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; }
@@ -14,17 +11,21 @@
   .header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #e0e0d8; }
   .header h1 { font-size: 22px; font-weight: 600; color: #1a1a1a; }
   .header p { font-size: 13px; color: #888; margin-top: 3px; }
-  .live-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 4px 10px; background: #eafaf1; color: #1a7a4a; border-radius: 20px; font-weight: 500; }
+  .live-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 4px 10px; background: #eafaf1; color: #1a7a4a; border-radius: 20px; font-weight: 500; white-space: nowrap; }
   .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #1a7a4a; animation: pulse 2s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
   .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.5rem; }
   .stat-card { background: white; border-radius: 10px; padding: 1rem; border: 1px solid #e8e8e0; }
   .stat-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
   .stat-value { font-size: 20px; font-weight: 600; }
-  .tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 2px solid #e0e0d8; }
-  .tab { padding: 10px 20px; font-size: 14px; cursor: pointer; border: none; background: none; color: #888; border-bottom: 2px solid transparent; margin-bottom: -2px; font-weight: 500; }
+  .tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 2px solid #e0e0d8; overflow-x: auto; }
+  .tab { padding: 10px 20px; font-size: 14px; cursor: pointer; border: none; background: none; color: #888; border-bottom: 2px solid transparent; margin-bottom: -2px; font-weight: 500; white-space: nowrap; }
   .tab.active { color: #1a7a4a; border-bottom-color: #1a7a4a; }
   .tab:hover:not(.active) { color: #1a1a1a; }
+  .tab.closed { color: #c0392b; }
+  .tab.closed.active { border-bottom-color: #c0392b; }
+  .section { display: none; }
+  .section.active { display: block; }
   .card { background: white; border-radius: 12px; border: 1px solid #e8e8e0; overflow: hidden; margin-bottom: 1rem; }
   .card-header { padding: 12px 16px; border-bottom: 1px solid #e8e8e0; font-size: 13px; font-weight: 600; color: #555; display: flex; justify-content: space-between; background: #fafaf8; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -56,213 +57,455 @@
   .player-pts { font-weight: 600; }
   .updated { font-size: 11px; color: #aaa; text-align: center; margin-top: 1.5rem; }
   .loading { text-align: center; padding: 3rem; color: #888; font-size: 15px; }
-  .error { text-align: center; padding: 3rem; color: #c0392b; font-size: 14px; }
+  .deadline-banner { padding: 10px 16px; border-radius: 10px; margin-bottom: 1.5rem; font-size: 13px; font-weight: 500; }
+  .deadline-open { background: #eafaf1; color: #1a7a4a; }
+  .deadline-closed { background: #fdf0f0; color: #c0392b; }
+  .draft-card { background: white; border-radius: 12px; border: 1px solid #e8e8e0; overflow: hidden; margin-bottom: 1rem; }
+  .draft-card-header { padding: 12px 16px; border-bottom: 1px solid #e8e8e0; font-size: 13px; font-weight: 600; color: #555; background: #fafaf8; }
+  .draft-card-body { padding: 16px; }
+  input[type="text"] { width: 100%; padding: 10px 14px; border: 1px solid #e0e0d8; border-radius: 8px; font-size: 14px; outline: none; }
+  input[type="text"]:focus { border-color: #1a7a4a; }
+  .budget-bar { margin-bottom: 1.5rem; }
+  .budget-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .budget-label { font-size: 13px; color: #888; }
+  .budget-value { font-size: 15px; font-weight: 700; }
+  .budget-value.over { color: #c0392b; }
+  .budget-value.ok { color: #1a7a4a; }
+  .progress-track { height: 8px; background: #f0f0e8; border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s, background 0.3s; }
+  .picks-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 1rem; }
+  .pick-slot { border: 1px dashed #e0e0d8; border-radius: 10px; padding: 10px 14px; min-height: 60px; display: flex; align-items: center; justify-content: space-between; }
+  .pick-slot.filled { border: 1px solid #1a7a4a; background: #f0faf5; }
+  .pick-slot.filled .pick-name { font-weight: 600; font-size: 13px; }
+  .pick-slot.filled .pick-sal { font-size: 11px; color: #888; }
+  .pick-empty { font-size: 12px; color: #bbb; }
+  .remove-btn { background: none; border: none; color: #c0392b; cursor: pointer; font-size: 18px; padding: 2px 6px; border-radius: 4px; line-height: 1; }
+  .remove-btn:hover { background: #fdf0f0; }
+  .submit-btn { width: 100%; padding: 14px; background: #1a7a4a; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 1rem; }
+  .submit-btn:hover { background: #145e38; }
+  .submit-btn:disabled { background: #ccc; cursor: not-allowed; }
+  .add-btn { font-size: 11px; padding: 3px 10px; background: #1a7a4a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+  .add-btn:hover { background: #145e38; }
+  .tier-gold { color: #7a5500; font-weight: 600; }
+  .tier-mid { color: #1a4a1a; }
+  .search-box { padding: 8px 14px; border-bottom: 1px solid #e8e8e0; }
+  .table-wrap { max-height: 400px; overflow-y: auto; }
+  tr.selected td { background: #eafaf1; }
+  tr.disabled td { opacity: 0.4; cursor: not-allowed; }
+  tr.disabled:hover td { background: transparent; cursor: not-allowed; }
+  tr.pickable { cursor: pointer; }
+  tr.pickable:hover td { background: #f5faf7; }
+  .error-msg { color: #c0392b; font-size: 13px; margin-top: 8px; }
+  .success-box { text-align: center; padding: 2rem 1rem; }
+  .success-box h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+  .success-box p { color: #888; font-size: 14px; margin-bottom: 1.5rem; }
+  .success-team { text-align: left; background: white; border-radius: 12px; border: 1px solid #e8e8e0; overflow: hidden; margin-bottom: 1.5rem; }
+  .reset-btn { font-size: 13px; color: #1a7a4a; background: none; border: none; cursor: pointer; text-decoration: underline; }
   @media(max-width:600px) {
     .stats-grid { grid-template-columns: repeat(2,1fr); }
     .team-grid { grid-template-columns: 1fr; }
+    .picks-grid { grid-template-columns: 1fr; }
     th.hide, td.hide { display: none; }
   }
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const API_URL = "https://script.google.com/macros/s/AKfycbw06ws5c9xVbEExrBgCUgwfjShiwb9uAvq_nafF8ouJXpESLlo3VNsnli7JImOVShFz/exec";
- 
-function App() {
-  const [data, setData] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState(null);
-  const [tab, setTab] = React.useState('leaderboard');
+<div id="root"><div class="app"><div class="loading">Loading tournament data...</div></div></div>
+<script>
+var API_URL = "https://script.google.com/macros/s/AKfycbw06ws5c9xVbEExrBgCUgwfjShiwb9uAvq_nafF8ouJXpESLlo3VNsnli7JImOVShFz/exec";
+var POST_URL = "https://script.google.com/macros/s/AKfycbziEPLWHddD_shTuHtKYg83Xi9ZOgv2Y2Kiy6ASB5jy5c4keDuChg31TWO3dwtFDnGq/exec";
+var BUDGET = 50;
+var MAX_PICKS = 6;
 
-  React.useEffect(() => {
-    fetch(API_URL)
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); })
-      .catch(e => { setError("Could not load data. Please try again later."); setLoading(false); });
-  }, []);
-
-  if (loading) return <div className="app"><div className="loading">Loading tournament data...</div></div>;
-  if (error) return <div className="app"><div className="error">{error}</div></div>;
-
-  const { tournament, venue, lastUpdated, leaderboard, players, teams } = data;
-  const activePlayers = players.filter(p => !String(p.status).includes('CUT') && !String(p.status).includes('cut'));
-  const cutPlayers = players.filter(p => String(p.status).includes('CUT') || String(p.status).includes('cut'));
-  const leader = leaderboard[0] || {};
-
-  function posBadge(i) {
-    const n = i + 1;
-    if (n===1) return <span className="pos-badge p1">1</span>;
-    if (n===2) return <span className="pos-badge p2">2</span>;
-    if (n===3) return <span className="pos-badge p3">3</span>;
-    return <span className="pos-badge pn">{n}</span>;
+var state = {
+  loading: true,
+  activeTab: 'leaderboard',
+  tournament: '',
+  venue: '',
+  deadline: null,
+  deadlinePassed: false,
+  lastUpdated: '',
+  leaderboard: [],
+  players: [],
+  teams: [],
+  draft: {
+    managerName: '',
+    picks: [],
+    search: '',
+    submitted: false,
+    submitting: false,
+    submitError: ''
   }
+};
 
-  function rowClass(i) {
-    if (i===0) return 'gold';
-    if (i===1) return 'silver';
-    if (i===2) return 'bronze';
-    return '';
-  }
+var salaryList = [
+  {name:"Scottie Scheffler",salary:13.50},
+  {name:"Rory McIlroy",salary:11.00},
+  {name:"Jon Rahm",salary:10.00},
+  {name:"Cameron Young",salary:9.80},
+  {name:"Bryson DeChambeau",salary:9.60},
+  {name:"Xander Schauffele",salary:9.40},
+  {name:"Matt Fitzpatrick",salary:9.20},
+  {name:"Ludvig Åberg",salary:9.00},
+  {name:"Tommy Fleetwood",salary:8.80},
+  {name:"Collin Morikawa",salary:8.50},
+  {name:"Brooks Koepka",salary:8.30},
+  {name:"Justin Rose",salary:8.20},
+  {name:"Russell Henley",salary:8.10},
+  {name:"Si Woo Kim",salary:8.00},
+  {name:"Justin Thomas",salary:8.00},
+  {name:"Robert MacIntyre",salary:7.90},
+  {name:"Patrick Cantlay",salary:7.90},
+  {name:"Viktor Hovland",salary:7.80},
+  {name:"Tyrrell Hatton",salary:7.80},
+  {name:"Jordan Spieth",salary:7.70},
+  {name:"Sam Burns",salary:7.60},
+  {name:"Hideki Matsuyama",salary:7.60},
+  {name:"Adam Scott",salary:7.50},
+  {name:"Rickie Fowler",salary:7.40},
+  {name:"Chris Gotterup",salary:7.40},
+  {name:"Patrick Reed",salary:7.40},
+  {name:"Keegan Bradley",salary:7.40},
+  {name:"Min Woo Lee",salary:7.30},
+  {name:"Ben Griffin",salary:7.20},
+  {name:"Sepp Straka",salary:7.20},
+  {name:"Shane Lowry",salary:7.10},
+  {name:"Akshay Bhatia",salary:7.10},
+  {name:"Maverick McNealy",salary:7.10},
+  {name:"Joaquin Niemann",salary:7.10},
+  {name:"Jake Knapp",salary:7.10},
+  {name:"Jason Day",salary:7.00},
+  {name:"Kurt Kitayama",salary:6.90},
+  {name:"J.J. Spaun",salary:6.90},
+  {name:"Harris English",salary:6.80},
+  {name:"Nicolai Højgaard",salary:6.80},
+  {name:"Gary Woodland",salary:6.80},
+  {name:"David Puig",salary:6.80},
+  {name:"Michael Thorbjornsen",salary:6.70},
+  {name:"Jacob Bridgeman",salary:6.70},
+  {name:"Corey Conners",salary:6.60},
+  {name:"Alex Fitzpatrick",salary:6.50},
+  {name:"Sungjae Im",salary:6.50},
+  {name:"Sahith Theegala",salary:6.50},
+  {name:"Harry Hall",salary:6.50},
+  {name:"Alex Noren",salary:6.40},
+  {name:"Thomas Detry",salary:6.40},
+  {name:"Marco Penge",salary:6.40},
+  {name:"Kristoffer Reitan",salary:6.40},
+  {name:"Alex Smalley",salary:6.10},
+  {name:"Wyndham Clark",salary:6.30},
+  {name:"Sam Stevens",salary:6.30},
+  {name:"Keith Mitchell",salary:6.30},
+  {name:"Daniel Berger",salary:6.20},
+  {name:"Ryan Gerard",salary:6.10},
+  {name:"Nick Taylor",salary:6.10},
+  {name:"Rasmus Højgaard",salary:6.00},
+  {name:"Dustin Johnson",salary:6.00},
+  {name:"Pierceson Coody",salary:5.90},
+  {name:"Aaron Rai",salary:5.90},
+  {name:"Bud Cauley",salary:5.80},
+  {name:"Matt McCarty",salary:5.80},
+  {name:"Brian Harman",salary:5.70},
+  {name:"Taylor Pendrith",salary:5.70},
+  {name:"Ryan Fox",salary:5.70},
+  {name:"J.T. Poston",salary:5.70},
+  {name:"Cameron Smith",salary:5.60},
+  {name:"Max Homa",salary:5.60},
+  {name:"Denny McCarthy",salary:5.60},
+  {name:"Tom McKibbin",salary:5.50},
+  {name:"Rico Hoey",salary:5.50},
+  {name:"Haotong Li",salary:5.40},
+  {name:"Michael Brennan",salary:5.40},
+  {name:"Max Greyserman",salary:5.30},
+  {name:"Christiaan Bezuidenhout",salary:5.30},
+  {name:"Rasmus Neergaard-Petersen",salary:5.20},
+  {name:"Aldrich Potgieter",salary:5.20},
+  {name:"Andrew Novak",salary:5.20},
+  {name:"Billy Horschel",salary:5.00},
+  {name:"Chris Kirk",salary:5.00},
+  {name:"Casey Jarvis",salary:5.00},
+  {name:"Nico Echavarria",salary:4.90},
+  {name:"John Keefer",salary:4.80},
+  {name:"Sami Välimäki",salary:4.70},
+  {name:"Lucas Glover",salary:4.70},
+  {name:"Davis Riley",salary:4.60}
+];
 
-  function toParClass(val) {
-    const s = String(val);
-    if (s.indexOf('-') === 0) return 'green';
-    if (s === 'E' || s === '0') return '';
-    return 'red';
-  }
-
-  function ordinal(n) {
-    const s = ['th','st','nd','rd'];
-    const v = n % 100;
-    return n + (s[(v-20)%10] || s[v] || s[0]);
-  }
-
-  // Build player points map for teams tab
-  const playerPtsMap = {};
-  players.forEach(p => { playerPtsMap[p.name] = p; });
-
-  return (
-    <div className="app">
-      <div className="header">
-        <div>
-          <h1>{tournament}</h1>
-          <p>{venue}</p>
-        </div>
-        <span className="live-badge"><span className="live-dot"></span>Live</span>
-      </div>
-
-      <div className="stats-grid">
-        <div className="stat-card"><div className="stat-label">Managers</div><div className="stat-value">{leaderboard.length}</div></div>
-        <div className="stat-card"><div className="stat-label">Leader</div><div className="stat-value" style={{fontSize:'15px',paddingTop:'3px'}}>{leader.manager || '—'}</div></div>
-        <div className="stat-card"><div className="stat-label">Top score</div><div className="stat-value">{leader.totalPts || '—'}</div></div>
-        <div className="stat-card"><div className="stat-label">Players active</div><div className="stat-value">{activePlayers.length}</div></div>
-      </div>
-
-      <div className="tabs">
-        {['leaderboard','scores','teams'].map(t => (
-          <button key={t} className={'tab'+(tab===t?' active':'')} onClick={() => setTab(t)}>
-            {t.charAt(0).toUpperCase()+t.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'leaderboard' && (
-        <div className="card">
-          <div className="card-header"><span>Fantasy standings</span><span>{leaderboard.length} managers</span></div>
-          <table>
-            <thead><tr>
-              <th style={{width:40}}>Pos</th>
-              <th>Manager</th>
-              <th className="r hide">Pick 1</th>
-              <th className="r hide">Pick 2</th>
-              <th className="r hide">Pick 3</th>
-              <th className="r hide">Pick 4</th>
-              <th className="r hide">Pick 5</th>
-              <th className="r hide">Pick 6</th>
-              <th className="r">Total pts</th>
-            </tr></thead>
-            <tbody>
-              {leaderboard.map((m,i) => (
-                <tr key={i} className={rowClass(i)}>
-                  <td>{posBadge(i)}</td>
-                  <td style={{fontWeight:600}}>{m.manager}</td>
-                  <td className="r hide">{m.pick1pts}</td>
-                  <td className="r hide">{m.pick2pts}</td>
-                  <td className="r hide">{m.pick3pts}</td>
-                  <td className="r hide">{m.pick4pts}</td>
-                  <td className="r hide">{m.pick5pts}</td>
-                  <td className="r hide">{m.pick6pts}</td>
-                  <td className="r pts">{m.totalPts}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {tab === 'scores' && (
-        <div className="card">
-          <div className="card-header"><span>Picked players — live scores</span><span>{players.length} players</span></div>
-          <table>
-            <thead><tr>
-              <th style={{width:40}}>Pos</th>
-              <th>Player</th>
-              <th className="r">R1</th>
-              <th className="r">R2</th>
-              <th className="r hide">R3</th>
-              <th className="r hide">R4</th>
-              <th className="r">To par</th>
-              <th className="r">Hole pts</th>
-              <th className="r hide">Bonus</th>
-              <th className="r hide">Finish</th>
-              <th className="r">Total</th>
-              <th className="hide">Status</th>
-            </tr></thead>
-            <tbody>
-              {players.map((p,i) => {
-                const cut = String(p.status).toLowerCase().includes('cut');
-                return (
-                  <tr key={i}>
-                    <td>{cut ? <span className="cut-badge">CUT</span> : p.position}</td>
-                    <td style={{fontWeight:500}}>{p.name}</td>
-                    <td className="r">{p.r1||'—'}</td>
-                    <td className="r">{p.r2||'—'}</td>
-                    <td className="r hide">{p.r3||'—'}</td>
-                    <td className="r hide">{p.r4||'—'}</td>
-                    <td className={'r '+toParClass(p.toPar)}>{p.toPar||'—'}</td>
-                    <td className="r">{p.holePts}</td>
-                    <td className="r hide">{p.bonusPts}</td>
-                    <td className="r hide">{p.finishPts}</td>
-                    <td className="r pts">{p.totalPts}</td>
-                    <td className="hide">{cut ? <span className="cut-badge">Cut</span> : <span className="active-badge">Active</span>}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {tab === 'teams' && (
-        <div className="team-grid">
-          {teams.map((team, i) => {
-            const lbEntry = leaderboard.find(l => l.manager === team.manager) || {};
-            const rank = leaderboard.findIndex(l => l.manager === team.manager) + 1;
-            return (
-              <div key={i} className="team-card">
-                <div className="team-header">
-                  <div>
-                    <div className="team-name">{team.manager}</div>
-                    <div className="team-rank">{rank ? ordinal(rank)+' place' : ''}</div>
-                  </div>
-                  <div className="team-pts">{lbEntry.totalPts || 0} pts</div>
-                </div>
-                {team.picks.map((pick, j) => {
-                  const p = playerPtsMap[pick.name] || {};
-                  const cut = String(p.status||'').toLowerCase().includes('cut');
-                  return (
-                    <div key={j} className="player-row">
-                      <div style={{opacity: cut ? 0.5 : 1}}>{pick.name}</div>
-                      <div style={{display:'flex',alignItems:'center',gap:8}}>
-                        {cut && <span className="cut-badge">Cut</span>}
-                        <span className="player-pts">{p.totalPts || 0} pts</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      <div className="updated">Last updated: {lastUpdated} · Data via Slash Golf API</div>
-    </div>
-  );
+function escH(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escJ(s) {
+  return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+}
+function ordinal(n) {
+  var s=['th','st','nd','rd'], v=n%100;
+  return n+(s[(v-20)%10]||s[v]||s[0]);
+}
+function toParClass(v) {
+  var s=String(v);
+  if(s.indexOf('-')===0) return 'green';
+  if(s==='E'||s==='0') return '';
+  return 'red';
+}
+function posBadge(i) {
+  var n=i+1;
+  if(n===1) return '<span class="pos-badge p1">1</span>';
+  if(n===2) return '<span class="pos-badge p2">2</span>';
+  if(n===3) return '<span class="pos-badge p3">3</span>';
+  return '<span class="pos-badge pn">'+n+'</span>';
+}
+function rowClass(i) {
+  if(i===0) return 'gold';
+  if(i===1) return 'silver';
+  if(i===2) return 'bronze';
+  return '';
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+function showTab(tab) {
+  state.activeTab = tab;
+  render();
+}
+
+function render() {
+  if(state.loading) return;
+  var d = state.draft;
+  var totalSalary = d.picks.reduce(function(s,p){return s+p.salary;},0);
+  var budgetLeft = BUDGET - totalSalary;
+  var over = budgetLeft < 0;
+  var budgetPct = Math.min(100,(totalSalary/BUDGET)*100);
+  var canSubmit = d.picks.length===MAX_PICKS && !over && d.managerName.trim() && !state.deadlinePassed && !d.submitting;
+  var leader = state.leaderboard[0]||{};
+  var activePlayers = state.players.filter(function(p){return !String(p.status||'').toLowerCase().includes('cut');});
+  var deadlineStr = state.deadline ? state.deadline.toLocaleString('en-GB',{dateStyle:'full',timeStyle:'short'}) : '';
+  var playerPtsMap = {};
+  state.players.forEach(function(p){playerPtsMap[p.name]=p;});
+
+  var html = '<div class="app">';
+
+  // Header
+  html += '<div class="header"><div><h1>'+escH(state.tournament)+'</h1><p>'+escH(state.venue)+'</p></div>';
+  html += '<span class="live-badge"><span class="live-dot"></span>Live</span></div>';
+
+  // Stats
+  html += '<div class="stats-grid">';
+  html += '<div class="stat-card"><div class="stat-label">Managers</div><div class="stat-value">'+state.leaderboard.length+'</div></div>';
+  html += '<div class="stat-card"><div class="stat-label">Leader</div><div class="stat-value" style="font-size:15px;padding-top:3px">'+escH(leader.manager||'—')+'</div></div>';
+  html += '<div class="stat-card"><div class="stat-label">Top score</div><div class="stat-value">'+(leader.totalPts||'—')+'</div></div>';
+  html += '<div class="stat-card"><div class="stat-label">Active players</div><div class="stat-value">'+activePlayers.length+'</div></div>';
+  html += '</div>';
+
+  // Tabs
+  var tabs = [{id:'leaderboard',label:'Leaderboard'},{id:'scores',label:'Scores'},{id:'teams',label:'Teams'},{id:'draft',label:state.deadlinePassed?'Draft (closed)':'Draft'}];
+  html += '<div class="tabs">';
+  tabs.forEach(function(t){
+    var cls = 'tab'+(state.activeTab===t.id?' active':'')+(state.deadlinePassed&&t.id==='draft'?' closed':'');
+    html += '<button class="'+cls+'" onclick="showTab(\''+t.id+'\')">'+t.label+'</button>';
+  });
+  html += '</div>';
+
+  // LEADERBOARD TAB
+  if(state.activeTab==='leaderboard') {
+    html += '<div class="card"><div class="card-header"><span>Fantasy standings</span><span>'+state.leaderboard.length+' managers</span></div>';
+    html += '<table><thead><tr><th style="width:40px">Pos</th><th>Manager</th><th class="r hide">Pick 1</th><th class="r hide">Pick 2</th><th class="r hide">Pick 3</th><th class="r hide">Pick 4</th><th class="r hide">Pick 5</th><th class="r hide">Pick 6</th><th class="r">Total pts</th></tr></thead><tbody>';
+    state.leaderboard.forEach(function(m,i){
+      html += '<tr class="'+rowClass(i)+'"><td>'+posBadge(i)+'</td><td style="font-weight:600">'+escH(m.manager)+'</td>';
+      html += '<td class="r hide">'+m.pick1pts+'</td><td class="r hide">'+m.pick2pts+'</td><td class="r hide">'+m.pick3pts+'</td>';
+      html += '<td class="r hide">'+m.pick4pts+'</td><td class="r hide">'+m.pick5pts+'</td><td class="r hide">'+m.pick6pts+'</td>';
+      html += '<td class="r pts">'+m.totalPts+'</td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+
+  // SCORES TAB
+  if(state.activeTab==='scores') {
+    html += '<div class="card"><div class="card-header"><span>Picked players — live scores</span><span>'+state.players.length+' players</span></div>';
+    html += '<table><thead><tr><th style="width:40px">Pos</th><th>Player</th><th class="r">R1</th><th class="r">R2</th><th class="r hide">R3</th><th class="r hide">R4</th><th class="r">To par</th><th class="r">Hole pts</th><th class="r hide">Bonus</th><th class="r hide">Finish</th><th class="r">Total</th><th class="hide">Status</th></tr></thead><tbody>';
+    state.players.forEach(function(p){
+      var cut = String(p.status||'').toLowerCase().includes('cut');
+      html += '<tr><td>'+(cut?'<span class="cut-badge">CUT</span>':p.position)+'</td>';
+      html += '<td style="font-weight:500">'+escH(p.name)+'</td>';
+      html += '<td class="r">'+(p.r1||'—')+'</td><td class="r">'+(p.r2||'—')+'</td>';
+      html += '<td class="r hide">'+(p.r3||'—')+'</td><td class="r hide">'+(p.r4||'—')+'</td>';
+      html += '<td class="r '+toParClass(p.toPar)+'">'+(p.toPar||'—')+'</td>';
+      html += '<td class="r">'+p.holePts+'</td><td class="r hide">'+p.bonusPts+'</td><td class="r hide">'+p.finishPts+'</td>';
+      html += '<td class="r pts">'+p.totalPts+'</td>';
+      html += '<td class="hide">'+(cut?'<span class="cut-badge">Cut</span>':'<span class="active-badge">Active</span>')+'</td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+
+  // TEAMS TAB
+  if(state.activeTab==='teams') {
+    html += '<div class="team-grid">';
+    state.teams.forEach(function(team,i){
+      var lbEntry = state.leaderboard.find(function(l){return l.manager===team.manager;})||{};
+      var rank = state.leaderboard.findIndex(function(l){return l.manager===team.manager;})+1;
+      html += '<div class="team-card"><div class="team-header"><div><div class="team-name">'+escH(team.manager)+'</div>';
+      html += '<div class="team-rank">'+(rank?ordinal(rank)+' place':'')+'</div></div>';
+      html += '<div class="team-pts">'+(lbEntry.totalPts||0)+' pts</div></div>';
+      team.picks.forEach(function(pick){
+        var p = playerPtsMap[pick.name]||{};
+        var cut = String(p.status||'').toLowerCase().includes('cut');
+        html += '<div class="player-row"><div style="opacity:'+(cut?0.5:1)+'">'+escH(pick.name)+'</div>';
+        html += '<div style="display:flex;align-items:center;gap:8px">'+(cut?'<span class="cut-badge">Cut</span>':'');
+        html += '<span class="player-pts">'+(p.totalPts||0)+' pts</span></div></div>';
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // DRAFT TAB
+  if(state.activeTab==='draft') {
+    if(state.deadlinePassed) {
+      html += '<div class="deadline-banner deadline-closed">Draft closed — deadline was '+deadlineStr+'</div>';
+      html += '<div class="card"><div class="card-header">Draft closed</div><div class="draft-card-body" style="padding:2rem;text-align:center;color:#888">The draft deadline has passed. Check the Teams tab to see everyone\'s picks.</div></div>';
+    } else if(d.submitted) {
+      html += renderSuccess(d);
+    } else {
+      html += '<div class="deadline-banner deadline-open">Draft open · Deadline: '+deadlineStr+'</div>';
+
+      // Name input
+      html += '<div class="draft-card"><div class="draft-card-header">Your name</div><div class="draft-card-body">';
+      html += '<input type="text" id="mgr-name" placeholder="Enter your name" value="'+escH(d.managerName)+'" oninput="updateName(this.value)">';
+      html += '</div></div>';
+
+      // Picks
+      html += '<div class="draft-card"><div class="draft-card-header">Your picks ('+d.picks.length+'/'+MAX_PICKS+')</div><div class="draft-card-body">';
+      html += '<div class="budget-bar"><div class="budget-row"><span class="budget-label">Salary used</span>';
+      html += '<span class="budget-value '+(over?'over':'ok')+'"">$'+totalSalary.toFixed(2)+' / $'+BUDGET.toFixed(2)+'</span></div>';
+      html += '<div class="progress-track"><div class="progress-fill" style="width:'+budgetPct+'%;background:'+(over?'#c0392b':'#1a7a4a')+'"></div></div></div>';
+      html += '<div class="picks-grid">';
+      for(var i=0;i<MAX_PICKS;i++){
+        if(d.picks[i]){
+          var pk=d.picks[i];
+          html += '<div class="pick-slot filled"><div><div class="pick-name">'+escH(pk.name)+'</div><div class="pick-sal">$'+pk.salary.toFixed(2)+'</div></div>';
+          html += '<button class="remove-btn" onclick="removePick('+i+')">×</button></div>';
+        } else {
+          html += '<div class="pick-slot"><span class="pick-empty">Pick '+(i+1)+'</span></div>';
+        }
+      }
+      html += '</div>';
+      if(d.submitError) html += '<div class="error-msg">'+escH(d.submitError)+'</div>';
+      html += '<button class="submit-btn" '+(canSubmit?'':'disabled')+' onclick="submitTeam()">Submit my team</button>';
+      html += '</div></div>';
+
+      // Player list
+      html += '<div class="draft-card"><div class="draft-card-header" style="display:flex;justify-content:space-between"><span>Player list</span><span style="font-size:11px;color:#aaa;font-weight:400">Click to add</span></div>';
+      html += '<div class="search-box"><input type="text" placeholder="Search players..." value="'+escH(d.search)+'" oninput="updateSearch(this.value)"></div>';
+      html += '<div class="table-wrap"><table><thead><tr><th>Player</th><th class="r">Salary</th><th></th></tr></thead><tbody>';
+
+      var filtered = salaryList.filter(function(p){
+        return !d.search || p.name.toLowerCase().indexOf(d.search.toLowerCase())!==-1;
+      });
+      filtered.forEach(function(p){
+        var picked = d.picks.some(function(pk){return pk.name===p.name;});
+        var wouldExceed = !picked && (totalSalary+p.salary)>BUDGET;
+        var full = d.picks.length>=MAX_PICKS && !picked;
+        var disabled = picked||wouldExceed||full;
+        var salClass = p.salary>=9?'tier-gold':(p.salary>=7.5?'tier-mid':'');
+        var trClass = picked?'selected':(disabled?'disabled':'pickable');
+        var onclick = disabled?'':" onclick=\"addPick('"+escJ(p.name)+"',"+p.salary+")\"";
+        html += '<tr class="'+trClass+'"'+onclick+'>';
+        html += '<td>'+escH(p.name)+'</td>';
+        html += '<td class="r '+salClass+'">$'+p.salary.toFixed(2)+'</td>';
+        html += '<td class="r">'+(picked?'<span style="color:#1a7a4a;font-size:13px">✓</span>':(disabled?'':'<button class="add-btn" onclick="event.stopPropagation();addPick(\''+escJ(p.name)+'\','+p.salary+')">Add</button>'))+'</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div></div>';
+    }
+  }
+
+  html += '<div class="updated">Last updated: '+(state.lastUpdated||'—')+' · Data via Slash Golf API</div>';
+  html += '</div>';
+  document.getElementById('root').innerHTML = html;
+}
+
+function renderSuccess(d) {
+  var html = '<div class="success-box"><h2>Team submitted!</h2>';
+  html += '<p>Good luck, '+escH(d.managerName)+'! Your picks are locked in.</p>';
+  html += '<div class="success-team">';
+  html += '<div style="padding:12px 16px;background:#fafaf8;border-bottom:1px solid #e8e8e0;font-weight:600;font-size:13px">'+escH(d.managerName)+'\'s team</div>';
+  d.picks.forEach(function(p){
+    html += '<div style="display:flex;justify-content:space-between;padding:9px 16px;border-top:1px solid #f0f0e8;font-size:13px">';
+    html += '<span>'+escH(p.name)+'</span><span style="color:#888">$'+p.salary.toFixed(2)+'</span></div>';
+  });
+  html += '</div>';
+  html += '<button class="reset-btn" onclick="resetDraft()">Submit another team</button>';
+  html += '</div>';
+  return html;
+}
+
+function updateName(val) { state.draft.managerName=val; render(); }
+function updateSearch(val) { state.draft.search=val; render(); }
+
+function addPick(name,salary) {
+  if(state.draft.picks.length>=MAX_PICKS) return;
+  if(state.draft.picks.some(function(p){return p.name===name;})) return;
+  state.draft.picks.push({name:name,salary:salary});
+  render();
+}
+
+function removePick(idx) {
+  state.draft.picks.splice(idx,1);
+  render();
+}
+
+function resetDraft() {
+  state.draft = {managerName:'',picks:[],search:'',submitted:false,submitting:false,submitError:''};
+  render();
+}
+
+function submitTeam() {
+  if(state.draft.submitting) return;
+  state.draft.submitting = true;
+  state.draft.submitError = '';
+  render();
+  var payload = {
+    manager: state.draft.managerName.trim(),
+    picks: state.draft.picks.map(function(p){return p.name;}),
+    totalSalary: state.draft.picks.reduce(function(s,p){return s+p.salary;},0)
+  };
+  fetch(POST_URL, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.success) {
+        state.draft.submitted=true;
+      } else {
+        state.draft.submitError=data.error||'Something went wrong. Please try again.';
+        state.draft.submitting=false;
+      }
+      render();
+    })
+    .catch(function(){
+      state.draft.submitError='Could not connect. Please try again.';
+      state.draft.submitting=false;
+      render();
+    });
+}
+
+// Load data
+fetch(API_URL)
+  .then(function(r){return r.json();})
+  .then(function(data){
+    state.tournament = data.tournament||'Majors Golf Fantasy';
+    state.venue = data.venue||'';
+    state.lastUpdated = data.lastUpdated||'';
+    state.leaderboard = data.leaderboard||[];
+    state.players = data.players||[];
+    state.teams = data.teams||[];
+    if(data.deadline) {
+      var d = new Date(data.deadline);
+      if(!isNaN(d)) { state.deadline=d; state.deadlinePassed=new Date()>d; }
+    }
+    state.loading=false;
+    render();
+  })
+  .catch(function(){
+    state.loading=false;
+    state.tournament='Majors Golf Fantasy';
+    render();
+  });
 </script>
 </body>
 </html>
