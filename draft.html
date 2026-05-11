@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Draft Your Team – Majors Golf Fantasy</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; }
+  .app { max-width: 800px; margin: 0 auto; padding: 1.5rem 1rem; }
+  .header { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #e0e0d8; }
+  .header h1 { font-size: 22px; font-weight: 600; }
+  .header p { font-size: 13px; color: #888; margin-top: 3px; }
+  .deadline-banner { padding: 10px 16px; border-radius: 10px; margin-bottom: 1.5rem; font-size: 13px; font-weight: 500; }
+  .deadline-open { background: #eafaf1; color: #1a7a4a; }
+  .deadline-closed { background: #fdf0f0; color: #c0392b; }
+  .card { background: white; border-radius: 12px; border: 1px solid #e8e8e0; overflow: hidden; margin-bottom: 1rem; }
+  .card-header { padding: 12px 16px; border-bottom: 1px solid #e8e8e0; font-size: 13px; font-weight: 600; color: #555; background: #fafaf8; display: flex; justify-content: space-between; align-items: center; }
+  .card-body { padding: 16px; }
+  input[type="text"] { width: 100%; padding: 10px 14px; border: 1px solid #e0e0d8; border-radius: 8px; font-size: 14px; outline: none; }
+  input[type="text"]:focus { border-color: #1a7a4a; }
+  .budget-bar { margin-bottom: 1.5rem; }
+  .budget-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .budget-label { font-size: 13px; color: #888; }
+  .budget-value { font-size: 15px; font-weight: 700; }
+  .budget-value.over { color: #c0392b; }
+  .budget-value.ok { color: #1a7a4a; }
+  .progress-track { height: 8px; background: #f0f0e8; border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s, background 0.3s; }
+  .picks-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 1rem; }
+  .pick-slot { border: 1px dashed #e0e0d8; border-radius: 10px; padding: 10px 14px; min-height: 60px; display: flex; align-items: center; justify-content: space-between; }
+  .pick-slot.filled { border: 1px solid #1a7a4a; background: #f0faf5; }
+  .pick-slot.filled .pick-name { font-weight: 600; font-size: 13px; }
+  .pick-slot.filled .pick-sal { font-size: 11px; color: #888; }
+  .pick-empty { font-size: 12px; color: #bbb; }
+  .remove-btn { background: none; border: none; color: #c0392b; cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; }
+  .remove-btn:hover { background: #fdf0f0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { padding: 8px 14px; text-align: left; font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.04em; background: #fafaf8; position: sticky; top: 0; }
+  th.r, td.r { text-align: right; }
+  td { padding: 9px 14px; border-top: 1px solid #f0f0e8; }
+  tr:hover td { background: #f5faf7; cursor: pointer; }
+  tr.selected td { background: #eafaf1; }
+  tr.disabled td { opacity: 0.4; cursor: not-allowed; }
+  tr.disabled:hover td { background: transparent; }
+  .add-btn { font-size: 11px; padding: 3px 10px; background: #1a7a4a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+  .add-btn:hover { background: #145e38; }
+  .tier-gold { color: #7a5500; font-weight: 600; }
+  .tier-mid { color: #1a4a1a; }
+  .submit-btn { width: 100%; padding: 14px; background: #1a7a4a; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 1rem; }
+  .submit-btn:hover { background: #145e38; }
+  .submit-btn:disabled { background: #ccc; cursor: not-allowed; }
+  .success-box { text-align: center; padding: 3rem 1rem; }
+  .success-box h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+  .success-box p { color: #888; font-size: 14px; margin-bottom: 1.5rem; }
+  .success-team { text-align: left; background: white; border-radius: 12px; border: 1px solid #e8e8e0; overflow: hidden; }
+  .error-msg { color: #c0392b; font-size: 13px; margin-top: 8px; }
+  .nav-link { font-size: 13px; color: #1a7a4a; text-decoration: none; display: inline-block; margin-top: 1.5rem; }
+  .search-box { padding: 8px 14px; border-bottom: 1px solid #e8e8e0; }
+  .search-box input { width: 100%; padding: 8px 12px; border: 1px solid #e0e0d8; border-radius: 8px; font-size: 13px; outline: none; }
+  .table-wrap { max-height: 400px; overflow-y: auto; }
+  .loading { text-align: center; padding: 3rem; color: #888; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbw06ws5c9xVbEExrBgCUgwfjShiwb9uAvq_nafF8ouJXpESLlo3VNsnli7JImOVShFz/exec";
+const POST_URL = "https://script.google.com/macros/s/AKfycbziEPLWHddD_shTuHtKYg83Xi9ZOgv2Y2Kiy6ASB5jy5c4keDuChg31TWO3dwtFDnGq/exec";
+const BUDGET = 50;
+const MAX_PICKS = 6;
+
+var state = {
+  loading: true,
+  tournament: "",
+  venue: "",
+  deadline: null,
+  deadlinePassed: false,
+  players: [],
+  picks: [],
+  managerName: "",
+  search: "",
+  submitted: false,
+  submitting: false,
+  error: "",
+  submitError: ""
+};
+
+function render() {
+  var root = document.getElementById('root');
+  if (state.loading) {
+    root.innerHTML = '<div class="app"><div class="loading">Loading tournament data...</div></div>';
+    return;
+  }
+
+  var totalSalary = state.picks.reduce(function(s,p){ return s + p.salary; }, 0);
+  var budgetLeft = BUDGET - totalSalary;
+  var budgetPct = Math.min(100, (totalSalary / BUDGET) * 100);
+  var over = budgetLeft < 0;
+  var canSubmit = state.picks.length === MAX_PICKS && !over && state.managerName.trim() && !state.deadlinePassed && !state.submitting;
+
+  if (state.submitted) {
+    root.innerHTML = renderSuccess();
+    return;
+  }
+
+  var deadlineStr = state.deadline ? state.deadline.toLocaleString('en-GB', {dateStyle:'full',timeStyle:'short'}) : '';
+
+  var html = '<div class="app">';
+  html += '<div class="header"><h1>' + state.tournament + '</h1><p>' + state.venue + ' &nbsp;·&nbsp; Draft your team</p></div>';
+
+  if (state.deadlinePassed) {
+    html += '<div class="deadline-banner deadline-closed">Draft closed — deadline has passed</div>';
+  } else {
+    html += '<div class="deadline-banner deadline-open">Draft open · Deadline: ' + deadlineStr + '</div>';
+  }
+
+  html += '<div class="card"><div class="card-header">Your name</div><div class="card-body">';
+  html += '<input type="text" id="manager-name" placeholder="Enter your name" value="' + escHtml(state.managerName) + '" ' + (state.deadlinePassed ? 'disabled' : '') + ' oninput="updateName(this.value)">';
+  html += '</div></div>';
+
+  html += '<div class="card"><div class="card-header"><span>Your picks (' + state.picks.length + '/' + MAX_PICKS + ')</span></div><div class="card-body">';
+  html += '<div class="budget-bar">';
+  html += '<div class="budget-row"><span class="budget-label">Salary used</span><span class="budget-value ' + (over?'over':'ok') + '">$' + totalSalary.toFixed(2) + ' / $' + BUDGET.toFixed(2) + '</span></div>';
+  html += '<div class="progress-track"><div class="progress-fill" style="width:' + budgetPct + '%;background:' + (over?'#c0392b':'#1a7a4a') + '"></div></div>';
+  html += '</div>';
+  html += '<div class="picks-grid">';
+  for (var i = 0; i < MAX_PICKS; i++) {
+    if (state.picks[i]) {
+      var pk = state.picks[i];
+      html += '<div class="pick-slot filled"><div><div class="pick-name">' + escHtml(pk.name) + '</div><div class="pick-sal">$' + pk.salary.toFixed(2) + '</div></div>';
+      html += '<button class="remove-btn" onclick="removePick(' + i + ')">×</button></div>';
+    } else {
+      html += '<div class="pick-slot"><span class="pick-empty">Pick ' + (i+1) + '</span></div>';
+    }
+  }
+  html += '</div>';
+  if (state.submitError) html += '<div class="error-msg">' + escHtml(state.submitError) + '</div>';
+  html += '<button class="submit-btn" ' + (canSubmit?'':'disabled') + ' onclick="submitTeam()">Submit my team</button>';
+  html += '</div></div>';
+
+  html += '<div class="card"><div class="card-header"><span>Player list</span><span style="font-size:11px;color:#aaa">Click a player to add</span></div>';
+  html += '<div class="search-box"><input type="text" placeholder="Search players..." value="' + escHtml(state.search) + '" oninput="updateSearch(this.value)"></div>';
+  html += '<div class="table-wrap"><table><thead><tr><th>Player</th><th class="r">Salary</th><th></th></tr></thead><tbody>';
+
+  var filtered = state.players.filter(function(p) {
+    return !state.search || p.name.toLowerCase().indexOf(state.search.toLowerCase()) !== -1;
+  });
+
+  filtered.forEach(function(p) {
+    var alreadyPicked = state.picks.some(function(pk){ return pk.name === p.name; });
+    var wouldExceed = !alreadyPicked && (totalSalary + p.salary) > BUDGET;
+    var full = state.picks.length >= MAX_PICKS && !alreadyPicked;
+    var disabled = alreadyPicked || wouldExceed || full || state.deadlinePassed;
+    var salClass = p.salary >= 9 ? 'tier-gold' : (p.salary >= 7.5 ? 'tier-mid' : '');
+    var rowClass = alreadyPicked ? 'selected' : (disabled ? 'disabled' : '');
+    html += '<tr class="' + rowClass + '" onclick="' + (disabled?'':'addPick(\''+escJs(p.name)+'\','+p.salary+')') + '">';
+    html += '<td>' + escHtml(p.name) + '</td>';
+    html += '<td class="r ' + salClass + '">$' + p.salary.toFixed(2) + '</td>';
+    html += '<td class="r">' + (alreadyPicked ? '<span style="color:#1a7a4a;font-size:12px">✓</span>' : (disabled ? '' : '<button class="add-btn" onclick="event.stopPropagation();addPick(\''+escJs(p.name)+'\','+p.salary+')">Add</button>')) + '</td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div></div>';
+  html += '<a href="/" class="nav-link">← Back to leaderboard</a>';
+  html += '</div>';
+  root.innerHTML = html;
+}
+
+function renderSuccess() {
+  var html = '<div class="app">';
+  html += '<div class="header"><h1>' + state.tournament + '</h1><p>' + state.venue + '</p></div>';
+  html += '<div class="success-box">';
+  html += '<h2>Team submitted!</h2>';
+  html += '<p>Good luck, ' + escHtml(state.managerName) + '. Your picks are locked in.</p>';
+  html += '<div class="success-team">';
+  html += '<div class="card-header" style="padding:12px 16px;background:#fafaf8;border-bottom:1px solid #e8e8e0;font-weight:600;font-size:13px">' + escHtml(state.managerName) + '\'s team</div>';
+  state.picks.forEach(function(p) {
+    html += '<div style="display:flex;justify-content:space-between;padding:9px 16px;border-top:1px solid #f0f0e8;font-size:13px">';
+    html += '<span>' + escHtml(p.name) + '</span><span style="color:#888">$' + p.salary.toFixed(2) + '</span></div>';
+  });
+  html += '</div>';
+  html += '<a href="/" class="nav-link">View leaderboard →</a>';
+  html += '</div></div>';
+  return html;
+}
+
+function updateName(val) { state.managerName = val; render(); }
+function updateSearch(val) { state.search = val; render(); }
+
+function addPick(name, salary) {
+  if (state.picks.length >= MAX_PICKS) return;
+  if (state.picks.some(function(p){ return p.name === name; })) return;
+  state.picks.push({ name: name, salary: salary });
+  render();
+}
+
+function removePick(idx) {
+  state.picks.splice(idx, 1);
+  render();
+}
+
+function submitTeam() {
+  if (state.submitting) return;
+  state.submitting = true;
+  state.submitError = "";
+  render();
+
+  var payload = {
+    manager: state.managerName.trim(),
+    picks: state.picks.map(function(p){ return p.name; }),
+    totalSalary: state.picks.reduce(function(s,p){ return s + p.salary; }, 0)
+  };
+
+  fetch(POST_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    if (data.success) {
+      state.submitted = true;
+    } else {
+      state.submitError = data.error || "Something went wrong. Please try again.";
+      state.submitting = false;
+    }
+    render();
+  })
+  .catch(function() {
+    state.submitError = "Could not connect. Please try again.";
+    state.submitting = false;
+    render();
+  });
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escJs(s) {
+  return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+}
+
+// Load data
+fetch(API_URL)
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    state.tournament = data.tournament || "Majors Golf Fantasy";
+    state.venue = data.venue || "";
+
+    // Parse deadline
+    if (data.deadline) {
+      var d = new Date(data.deadline);
+      if (!isNaN(d)) {
+        state.deadline = d;
+        state.deadlinePassed = new Date() > d;
+      }
+    }
+
+    // Build player list from salary sheet data
+    // Use players array if available, otherwise build from teams
+    var playerMap = {};
+    if (data.players) {
+      data.players.forEach(function(p) {
+        if (p.name) playerMap[p.name] = true;
+      });
+    }
+
+    // We need salary data — fetch from the salary sheet via a separate approach
+    // For now use a hardcoded salary list that matches your sheet
+    state.players = getSalaryList();
+    state.loading = false;
+    render();
+  })
+  .catch(function() {
+    state.loading = false;
+    state.tournament = "Majors Golf Fantasy";
+    state.players = getSalaryList();
+    render();
+  });
+
+function getSalaryList() {
+  return [
+function getSalaryList() {
+  return [
+    {name:"Scottie Scheffler",salary:13.50},
+    {name:"Rory McIlroy",salary:11.00},
+    {name:"Jon Rahm",salary:10.00},
+    {name:"Cameron Young",salary:9.80},
+    {name:"Bryson DeChambeau",salary:9.60},
+    {name:"Xander Schauffele",salary:9.40},
+    {name:"Matt Fitzpatrick",salary:9.20},
+    {name:"Ludvig Åberg",salary:9.00},
+    {name:"Tommy Fleetwood",salary:8.80},
+    {name:"Collin Morikawa",salary:8.50},
+    {name:"Brooks Koepka",salary:8.30},
+    {name:"Justin Rose",salary:8.20},
+    {name:"Russell Henley",salary:8.10},
+    {name:"Si Woo Kim",salary:8.00},
+    {name:"Justin Thomas",salary:8.00},
+    {name:"Robert MacIntyre",salary:7.90},
+    {name:"Patrick Cantlay",salary:7.90},
+    {name:"Viktor Hovland",salary:7.80},
+    {name:"Tyrrell Hatton",salary:7.80},
+    {name:"Jordan Spieth",salary:7.70},
+    {name:"Sam Burns",salary:7.60},
+    {name:"Hideki Matsuyama",salary:7.60},
+    {name:"Adam Scott",salary:7.50},
+    {name:"Rickie Fowler",salary:7.40},
+    {name:"Chris Gotterup",salary:7.40},
+    {name:"Patrick Reed",salary:7.40},
+    {name:"Min Woo Lee",salary:7.30},
+    {name:"Ben Griffin",salary:7.20},
+    {name:"Sepp Straka",salary:7.20},
+    {name:"Shane Lowry",salary:7.10},
+    {name:"Akshay Bhatia",salary:7.10},
+    {name:"Maverick McNealy",salary:7.10},
+    {name:"Joaquin Niemann",salary:7.10},
+    {name:"Jake Knapp",salary:7.10},
+    {name:"Jason Day",salary:7.00},
+    {name:"Kurt Kitayama",salary:6.90},
+    {name:"J.J. Spaun",salary:6.90},
+    {name:"Harris English",salary:6.80},
+    {name:"Nicolai Højgaard",salary:6.80},
+    {name:"Gary Woodland",salary:6.80},
+    {name:"David Puig",salary:6.80},
+    {name:"Michael Thorbjornsen",salary:6.70},
+    {name:"Jacob Bridgeman",salary:6.70},
+    {name:"Keegan Bradley",salary:7.40},
+    {name:"Corey Conners",salary:6.60},
+    {name:"Alex Fitzpatrick",salary:6.50},
+    {name:"Sungjae Im",salary:6.50},
+    {name:"Sahith Theegala",salary:6.50},
+    {name:"Harry Hall",salary:6.50},
+    {name:"Alex Noren",salary:6.40},
+    {name:"Thomas Detry",salary:6.40},
+    {name:"Marco Penge",salary:6.40},
+    {name:"Kristoffer Reitan",salary:6.40},
+    {name:"Alex Smalley",salary:6.10},
+    {name:"Wyndham Clark",salary:6.30},
+    {name:"Sam Stevens",salary:6.30},
+    {name:"Keith Mitchell",salary:6.30},
+    {name:"Daniel Berger",salary:6.20},
+    {name:"Ryan Gerard",salary:6.10},
+    {name:"Nick Taylor",salary:6.10},
+    {name:"Rasmus Højgaard",salary:6.00},
+    {name:"Dustin Johnson",salary:6.00},
+    {name:"Pierceson Coody",salary:5.90},
+    {name:"Aaron Rai",salary:5.90},
+    {name:"Jordan Smith",salary:5.90},
+    {name:"Bud Cauley",salary:5.80},
+    {name:"Matt McCarty",salary:5.80},
+    {name:"Jayden Schaper",salary:5.80},
+    {name:"Brian Harman",salary:5.70},
+    {name:"Taylor Pendrith",salary:5.70},
+    {name:"Ryan Fox",salary:5.70},
+    {name:"J.T. Poston",salary:5.70},
+    {name:"Cameron Smith",salary:5.60},
+    {name:"Ryo Hisatsune",salary:5.60},
+    {name:"Michael Kim",salary:5.60},
+    {name:"Max Homa",salary:5.60},
+    {name:"Denny McCarthy",salary:5.60},
+    {name:"Tom McKibbin",salary:5.50},
+    {name:"Rico Hoey",salary:5.50},
+    {name:"Matt Wallace",salary:5.50},
+    {name:"Ricky Castillo",salary:5.40},
+    {name:"Haotong Li",salary:5.40},
+    {name:"Michael Brennan",salary:5.40},
+    {name:"Max Greyserman",salary:5.30},
+    {name:"Stephan Jaeger",salary:5.30},
+    {name:"Christiaan Bezuidenhout",salary:5.30},
+    {name:"Rasmus Neergaard-Petersen",salary:5.20},
+    {name:"Aldrich Potgieter",salary:5.20},
+    {name:"Andrew Novak",salary:5.20},
+    {name:"Patrick Rodgers",salary:5.10},
+    {name:"Daniel Hillier",salary:5.10},
+    {name:"Max McGreevy",salary:5.00},
+    {name:"Billy Horschel",salary:5.00},
+    {name:"Chris Kirk",salary:5.00},
+    {name:"Casey Jarvis",salary:5.00},
+    {name:"Nico Echavarria",salary:4.90},
+    {name:"Garrick Higgo",salary:4.90},
+    {name:"John Keefer",salary:4.80},
+    {name:"Matthias Schmid",salary:4.80},
+    {name:"Sami Välimäki",salary:4.70},
+    {name:"Lucas Glover",salary:4.70},
+    {name:"Davis Riley",salary:4.60},
+    {name:"Angel Ayora",salary:4.60}
+  ];
+}
+  ];
+}
+</script>
+</body>
+</html>
