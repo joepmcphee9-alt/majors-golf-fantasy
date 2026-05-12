@@ -420,7 +420,7 @@ function render() {
 
       // Name input
       html += '<div class="draft-card"><div class="draft-card-header">Your name</div><div class="draft-card-body">';
-      html += '<input type="text" id="mgr-name" placeholder="Enter your name" value="'+escH(d.managerName)+'" oninput="updateName(this.value)">';
+      html += '<input type="text" id="mgr-name" placeholder="Enter your name" value="'+escH(d.managerName)+'" onchange="updateName(this.value)">';
       html += '</div></div>';
 
       // Picks
@@ -489,7 +489,13 @@ function renderSuccess(d) {
   return html;
 }
 
-function updateName(val) { state.draft.managerName=val; render(); }
+function updateName(val) { 
+  state.draft.managerName=val; 
+  // Don't full re-render, just update dependent elements
+  var submitBtn = document.querySelector('.submit-btn');
+  if(submitBtn) submitBtn.disabled = !(state.draft.picks.length===MAX_PICKS && !state.draft.submitError && val.trim() && !state.deadlinePassed);
+}
+
 function updateSearch(val) { state.draft.search=val; render(); }
 
 function addPick(name,salary) {
